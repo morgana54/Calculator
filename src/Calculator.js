@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './index.css'
 
-const Button = ({name, id, handleClick}) => {
+const Formula = ({currentEquation}) => {
   return (
-    <button id={id} name={name} onClick={(e) => handleClick(e)}>{name}</button>
-    );
-}
-const EqualsBtn = ({name, id, handleEqualsClick}) => {
-  return (
-    <button id={id} name={name} onClick={() => handleEqualsClick()}>{name}</button>
-    );
+    <div>
+      {currentEquation}
+    </div>
+  )
 }
 
 const Result = ({result}) => {
@@ -20,17 +17,31 @@ const Result = ({result}) => {
   )
 }
 
+const Button = ({name, id, handleClick}) => {
+  return (
+    <button id={id} name={name} onClick={(e) => handleClick(e)}>{name}</button>
+    );
+}
+
+const ZeroBtn = ({name, id, handleClick}) => {
+  return (
+    // i tutaj dasz że jeśli count jest większy od 0 to wtedy po prostu zwrócisz null na onclick i się nie wykona nic!
+    <button id={id} name={name} onClick={(e) => handleClick(e)}>{name}</button>
+    );
+}
+
+
+// {power ? handleBankSwitch : null}
+
+const EqualsBtn = ({name, id, handleEqualsClick}) => {
+  return (
+    <button id={id} name={name} onClick={() => handleEqualsClick()}>{name}</button>
+    );
+}
+
 const AC = ({name, handleClearClick}) => {
   return (
     <button onClick={() => handleClearClick()}>{name}</button>
-  )
-}
-
-const Formula = ({currentEquation}) => {
-  return (
-    <div>
-      {currentEquation}
-    </div>
   )
 }
 
@@ -38,22 +49,66 @@ const Calculator = () => {
   const [result, setResult] = React.useState(0)
   const [currentEquation, setCurrentEquation] = React.useState('')
 
+  function handleClick(e)  {
+    const input = e.target.name 
+    // Catch last number (before input is added do currentEquation)
+    const lastNumberExpression = (currentEquation + input).split('').reduce(
+      // if current char is a number accumulate it to the whole string
+      // else reset the accumulated string and start bulding it from empty string
+      // it's all about evaluating the value of current number and if (in condition below) it's zero you just can't type more than one zero consecutively
+      (acc, char) => /[0-9]/.test(char) ? acc + char : '', '')
+    // ignore input concatenation when value of last number (eg. 123 or 010)
 
-  function handleClick(e) {
-    let input = e.target.name  
-    setCurrentEquation(prev => prev + input) 
+    // console.log(lastNumberExpression[0], lastNumberExpression, currentEquation)
+    if(lastNumberExpression.length > 1 && parseInt(lastNumberExpression) === 0) {
+      return
+    } else if(lastNumberExpression[0] === '0') {
+      setCurrentEquation(prevStr => {
+        // tutaj wywołasz potencjalnie handle octal
+
+        // PROBLEM: musisz usuwać zero z last number w current equation (prev str)!!, a nie z samego początku tylko (ALE DLA PIERWSZEJ LICZBY TO DZIAŁA WIĘC GIT)
+
+        // musisz odzwierciedlić to:
+        // na chwilę oddzielasz last number i dzielisz currentquation na dwa stringi, potem odcinasz to zero z początku i potem joinujesz te dwa arraye i wtedy jestes w domu --> jak nie bedziwsz wiedzial dokladnych metod jakich użyć to spytaj kacperra o metodę ktora robi daną rzecz
+
+        // --> dzielisz na arraye stringów co operator split(/)
+        const tempArr = prevStr.split(/[\\/*\-+]/)
+        // cut out the zero at the beginning
+        const lastNumInTempArr = tempArr[tempArr.length - 1].slice(1, tempArr[tempArr.length - 1].length)
+
+        // console.log('1: ' + tempArr)
+        // console.log(lastNumInTempArr)
+        // console.log(tempArr.splice((tempArr.length - 1), 1, lastNumInTempArr))
+        // console.log(prevStr)
+        // console.log(tempArr)
+        // tempArr.shift()
+        console.log(lastNumInTempArr)
+        return prevStr.replace('0' + lastNumInTempArr, lastNumInTempArr) + input
+        // return tempArr.join('') + input
+      })
+    } else {
+      setCurrentEquation(prevStr => prevStr + input) 
+    }
+
+    // Concatenate input to current equation
+
+    // pomysł: bierzesz całego stringa last NUmber expression i jeśli zero jest na początku i jego długość jest większa niż jeden to po prostu usuwasz to zero z początku!! jakoś slice itp. użyjesz pewnie
+
+    // potem ją napiszesz poza komponentami, ale masz ją tutaj bliżej żeby łatwiej ją było pisać
+    // TO JEST OPCJONALNE, żeby ładniej wyglądało, ale nie musisz spędzać nad tym za wiele czasu
+    function handleOctalLiteral () {
+  
+    }
   }
 
   function handleEqualsClick() {
     setResult(eval(currentEquation))
-    console.log(2)  
   }
 
   function handleClearClick() {
     setResult(0)
     setCurrentEquation('')
   }
-
 
   return ( 
   <div>
@@ -66,7 +121,7 @@ const Calculator = () => {
     <Button id='seven' name="7" handleClick={handleClick}/>
     <Button id='eight' name="8" handleClick={handleClick}/>
     <Button id='nine' name="9" handleClick={handleClick}/>
-    <Button id='zero' name="0" handleClick={handleClick}/>
+    <ZeroBtn id='zero' name="0" handleClick={handleClick}/>
     <Button id='decimal' name="." handleClick={handleClick}/>
     <Button id='add' name="+" handleClick={handleClick}/>
     <Button id='subtract' name="-" handleClick={handleClick}/>
@@ -82,8 +137,10 @@ const Calculator = () => {
  
 export default Calculator;
 
-// TERAZ technikalia typu typ float itp. itd. lub user story #13
-
+// TO-DO:
+// - nadpisania zera jeśli było ono na początku a liczba jest więcej niż jedno-cyfrowa (czyli NIE może być np. 12+034, 010+010 tylko 12+34 albo 12+0 i 10+10)
+// - jedne operatory i user story #13
+ 
 // podczas tego przypomnij sobie działania hooków, których się już nauczyłeś
 // czytaj także równolegle dokumentacje "zaawansowane informacje"
 
