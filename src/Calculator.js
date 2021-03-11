@@ -51,54 +51,7 @@ const Calculator = () => {
 
   function handleClick(e)  {
     const input = e.target.name 
-    // Catch last number (before input is added do currentEquation)
-    const lastNumberExpression = (currentEquation + input).split('').reduce(
-      // if current char is a number accumulate it to the whole string
-      // else reset the accumulated string and start bulding it from empty string
-      // it's all about evaluating the value of current number and if (in condition below) it's zero you just can't type more than one zero consecutively
-      (acc, char) => /[0-9]/.test(char) ? acc + char : '', '')
-    // ignore input concatenation when value of last number (eg. 123 or 010)
-
-    // console.log(lastNumberExpression[0], lastNumberExpression, currentEquation)
-    if(lastNumberExpression.length > 1 && parseInt(lastNumberExpression) === 0) {
-      return
-    } else if(lastNumberExpression[0] === '0') {
-      setCurrentEquation(prevStr => {
-        // tutaj wywołasz potencjalnie handle octal
-
-        // PROBLEM: musisz usuwać zero z last number w current equation (prev str)!!, a nie z samego początku tylko (ALE DLA PIERWSZEJ LICZBY TO DZIAŁA WIĘC GIT)
-
-        // musisz odzwierciedlić to:
-        // na chwilę oddzielasz last number i dzielisz currentquation na dwa stringi, potem odcinasz to zero z początku i potem joinujesz te dwa arraye i wtedy jestes w domu --> jak nie bedziwsz wiedzial dokladnych metod jakich użyć to spytaj kacperra o metodę ktora robi daną rzecz
-
-        // --> dzielisz na arraye stringów co operator split(/)
-        const tempArr = prevStr.split(/[\\/*\-+]/)
-        // cut out the zero at the beginning
-        const lastNumInTempArr = tempArr[tempArr.length - 1].slice(1, tempArr[tempArr.length - 1].length)
-
-        // console.log('1: ' + tempArr)
-        // console.log(lastNumInTempArr)
-        // console.log(tempArr.splice((tempArr.length - 1), 1, lastNumInTempArr))
-        // console.log(prevStr)
-        // console.log(tempArr)
-        // tempArr.shift()
-        console.log(lastNumInTempArr)
-        return prevStr.replace('0' + lastNumInTempArr, lastNumInTempArr) + input
-        // return tempArr.join('') + input
-      })
-    } else {
-      setCurrentEquation(prevStr => prevStr + input) 
-    }
-
-    // Concatenate input to current equation
-
-    // pomysł: bierzesz całego stringa last NUmber expression i jeśli zero jest na początku i jego długość jest większa niż jeden to po prostu usuwasz to zero z początku!! jakoś slice itp. użyjesz pewnie
-
-    // potem ją napiszesz poza komponentami, ale masz ją tutaj bliżej żeby łatwiej ją było pisać
-    // TO JEST OPCJONALNE, żeby ładniej wyglądało, ale nie musisz spędzać nad tym za wiele czasu
-    function handleOctalLiteral () {
-  
-    }
+    return processEquation(currentEquation, input, setCurrentEquation)
   }
 
   function handleEqualsClick() {
@@ -134,12 +87,51 @@ const Calculator = () => {
   </div>
   );
 }
+
+function processEquation (curEq, input, setter) {
+// it handles octal literals
+// Catch last number (before input is added do currentEquation)
+const lastNumberExpression = getLastNumber(curEq + input)
+
+  // evaluate the value of current number (2nd condition) and if it's zero you just can't type more than one zero consecutively
+  // 1st condition allows for a zero to be passed
+  if(lastNumberExpression.length > 1 && parseInt(lastNumberExpression) === 0) {
+    return
+  } else if(lastNumberExpression[0] === '0') {
+    setter(prevStr => {
+      // tutaj wywołasz potencjalnie handle octal
+      const lastNumBeforeInput = getLastNumber(curEq)
+
+      if(lastNumBeforeInput === '0') {
+        // cut out the whole substring without the zero at the end (so transform 123+3221*0 to 123+3221*) and then add input to it and return it
+        return curEq.substr(0, curEq.length - 1) + input
+      } else {
+        // just perform standard concatenation
+        return curEq + input
+      }
+    })
+  } else {
+    setter(prevStr => prevStr + input) 
+  }
+}
+
+function getLastNumber(equation) {
+  return equation.split('').reduce(
+    // if current char is a number accumulate it to the whole string
+    // else reset the accumulated string and start bulding it from empty string (so it will accumulate numbers only after the last operator!)
+    (acc, char) => /[0-9]/.test(char) ? acc + char : '', '')
+}
+
  
 export default Calculator;
 
 // TO-DO:
-// - nadpisania zera jeśli było ono na początku a liczba jest więcej niż jedno-cyfrowa (czyli NIE może być np. 12+034, 010+010 tylko 12+34 albo 12+0 i 10+10)
+// - tylko jeden decimal point żeby można było wprowadzić w całej liczbie
+// - ogarnij żeby można było wpisać liczbę 2.0004 lub 2.03 (żeby po kropce też można było wpisać zera!!)
 // - jedne operatory i user story #13
+// - user story #14
+// - user story #15
+// - zaimplementować Formula / Expression Logic jeśli to nie będzie mega długie do zrobienia (jeśli tak to po prostu przed składaniem CV to rozwiniesz tak samo jak Drum Machine)
  
 // podczas tego przypomnij sobie działania hooków, których się już nauczyłeś
 // czytaj także równolegle dokumentacje "zaawansowane informacje"
@@ -147,7 +139,3 @@ export default Calculator;
 // PLAN ZAWSZE: 1. określ komponenty (każdy ma mieć swoje osobne zadanie) 2. zbuduj wersję statyczną (komponenty bez stanu) 3. zacznij od tego najwyższego 4. zaimplementuj minimalną dynamikę (pamiętaj o tym, żeby mieć tylko te części stanu, które są crucial) 5.rozwijaj po kolei różne feeature'y
 
 // PYTANIE DO KACPERRA: czy worth jest podejście, że styluje się na końcu? czy to różnie bywa
-
-
-
-
