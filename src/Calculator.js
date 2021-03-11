@@ -1,18 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import './index.css'
 
-const Formula = ({currentEquation}) => {
+const Display = ({result, currentEquation, shouldEqual}) => {
   return (
-    <div>
-      {currentEquation}
-    </div>
-  )
-}
-
-const Result = ({result}) => {
-  return (
-    <div id='display' className='display'>
-      {result}
+    <div id="display" className='display'>
+      {shouldEqual ? result : currentEquation}
     </div>
   )
 }
@@ -30,9 +22,6 @@ const ZeroBtn = ({name, id, handleClick}) => {
     );
 }
 
-
-// {power ? handleBankSwitch : null}
-
 const EqualsBtn = ({name, id, handleEqualsClick}) => {
   return (
     <button id={id} name={name} onClick={() => handleEqualsClick()}>{name}</button>
@@ -41,33 +30,52 @@ const EqualsBtn = ({name, id, handleEqualsClick}) => {
 
 const AC = ({name, handleClearClick}) => {
   return (
-    <button onClick={() => handleClearClick()}>{name}</button>
+    <button id="clear" onClick={() => handleClearClick()}>{name}</button>
   )
 }
 
 const Calculator = () => {
   const [result, setResult] = React.useState(0)
   const [currentEquation, setCurrentEquation] = React.useState('')
-
+  const [decimalCount, setDecimalCount] = React.useState(0)
+  const [shouldEqual, setShouldEqual] = React.useState(false)
+ 
   function handleClick(e)  {
+    setShouldEqual(false)
     const input = e.target.name 
-    return processEquation(currentEquation, input, setCurrentEquation)
+    // console.log('curEq: ' + currentEquation, 'last: ' + currentEquation[currentEquation.length - 1])
+    return processEquation(
+      currentEquation, input, setCurrentEquation, decimalCount, setDecimalCount)
   }
 
   function handleEqualsClick() {
-    setResult(eval(currentEquation))
+    // debugger;
+    let len = currentEquation.length
+    let tempEq = ''
+    if(/[\/+*\-]/.test(currentEquation[len - 1])) {
+      return;
+      // tempEq = currentEquation.substr(0, len - 1)
+      // // console.log(tempEq)
+      // setResult(eval(tempEq))
+      // setCurrentEquation(eval(tempEq))
+    } else {
+      setResult(eval(currentEquation))
+      setCurrentEquation(eval(currentEquation))
+      setShouldEqual(true)
+    }
   }
 
   function handleClearClick() {
     setResult(0)
     setCurrentEquation('')
+    setDecimalCount(0)
   }
 
   return ( 
   <div>
     <Button id='one' name="1" handleClick={handleClick}/>
     <Button id='two' name="2" handleClick={handleClick}/>
-    <Button id='thre' name="3" handleClick={handleClick}/>
+    <Button id='three' name="3" handleClick={handleClick}/>
     <Button id='four' name="4" handleClick={handleClick}/>
     <Button id='five' name="5" handleClick={handleClick}/>
     <Button id='six' name="6" handleClick={handleClick}/>
@@ -81,27 +89,23 @@ const Calculator = () => {
     <Button id='multiply' name="*" handleClick={handleClick}/>
     <Button id='divide' name="/" handleClick={handleClick}/>
     <EqualsBtn id='equals' name="=" handleEqualsClick={handleEqualsClick}/>
-    <Result result={result}/>
-    <Formula currentEquation={currentEquation} />
-    <AC name='AC' handleClearClick={handleClearClick}/>
+    <Display result={result} currentEquation={currentEquation} shouldEqual={shouldEqual}/>
+    <AC name='AC' handleClearClick={handleClearClick} id="clear"/>
   </div>
   );
 }
-
-function processEquation (curEq, input, setter) {
-// it handles octal literals
-// Catch last number (before input is added do currentEquation)
-const lastNumberExpression = getLastNumber(curEq + input)
-
+// it also handles octal literals
+function processEquation (curEq, input, setter, dcmCount, dcmSetter) {
+  // Catch last number (before input is added do currentEquation)
+  const lastNumberExpression = getLastNumber(curEq + input)
   // evaluate the value of current number (2nd condition) and if it's zero you just can't type more than one zero consecutively
   // 1st condition allows for a zero to be passed
+  // console.log('lastNum: ' + lastNumberExpression)
   if(lastNumberExpression.length > 1 && parseInt(lastNumberExpression) === 0) {
     return
   } else if(lastNumberExpression[0] === '0') {
     setter(prevStr => {
-      // tutaj wywołasz potencjalnie handle octal
       const lastNumBeforeInput = getLastNumber(curEq)
-
       if(lastNumBeforeInput === '0') {
         // cut out the whole substring without the zero at the end (so transform 123+3221*0 to 123+3221*) and then add input to it and return it
         return curEq.substr(0, curEq.length - 1) + input
@@ -110,27 +114,36 @@ const lastNumberExpression = getLastNumber(curEq + input)
         return curEq + input
       }
     })
+  } else if(/[\/+*\-]/.test(curEq[curEq.length - 1]) && /[\/+*]/.test(input)) {
+    // cut out the whole substring without the operator and replace it with the new one (ie. input) - except the minus operator
+    setter(curEq.substr(0, curEq.length - 1) + input) 
+  } else if(/[\/+*\-]/.test(input)) {
+    // reset count after each operator (so in every new number)
+    dcmSetter(0)
+    setter(prevStr => prevStr + input) 
+  } else if(input === '.') {
+    if(dcmCount > 0) {
+      return
+    }
+    dcmSetter(prevCount => prevCount + 1)
+    setter(prevStr => prevStr + input) 
   } else {
     setter(prevStr => prevStr + input) 
   }
 }
 
 function getLastNumber(equation) {
+  // if current char is a number accumulate it to the whole string
+  // else reset the accumulated string and start bulding it from empty string (so it will accumulate numbers only after the last operator!)
   return equation.split('').reduce(
-    // if current char is a number accumulate it to the whole string
-    // else reset the accumulated string and start bulding it from empty string (so it will accumulate numbers only after the last operator!)
-    (acc, char) => /[0-9]/.test(char) ? acc + char : '', '')
+    (acc, char) => /[0-9.]/.test(char) ? acc + char : '', '')
 }
 
  
 export default Calculator;
 
 // TO-DO:
-// - tylko jeden decimal point żeby można było wprowadzić w całej liczbie
-// - ogarnij żeby można było wpisać liczbę 2.0004 lub 2.03 (żeby po kropce też można było wpisać zera!!)
-// - jedne operatory i user story #13
-// - user story #14
-// - user story #15
+// - rozwiązać problem z testem 16 (czyli zmodyfikować / rozwinąć wpisywanie operatorów)
 // - zaimplementować Formula / Expression Logic jeśli to nie będzie mega długie do zrobienia (jeśli tak to po prostu przed składaniem CV to rozwiniesz tak samo jak Drum Machine)
  
 // podczas tego przypomnij sobie działania hooków, których się już nauczyłeś

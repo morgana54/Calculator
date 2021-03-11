@@ -6,3 +6,7 @@
     text-align: right;
     border: 1px solid black;
 }
+
+body {
+    margin: 100px
+}
