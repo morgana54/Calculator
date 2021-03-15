@@ -70,6 +70,7 @@ const Calculator = () => {
     setResult(0)
     setCurrentEquation('')
     setDecimalCount(0)
+    setAlert('')
   }
 
   return ( 
