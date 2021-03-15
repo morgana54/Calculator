@@ -1,12 +1,85 @@
-.display {
-    display: inline-block;
-    width: 100px;
-    height: 30px;
-    margin-left: 10px;
-    text-align: right;
-    border: 1px solid black;
+@font-face {
+    font-family: digital;
+    src: url(fonts/digital-7.ttf);
 }
 
 body {
-    margin: 100px
+    margin: 0;
+}
+
+.container {
+    background-color: rgb(168, 250, 219);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+
+}
+
+.calculator {
+    height: 405px;
+    width: 325px;
+    margin: 0 auto;
+    background-color: rgb(0, 0, 0);
+    padding: 4px;
+}
+
+button {
+    padding: 10px;
+    width: 80px;
+    height: 80px;
+    font-size: 1.5em;
+    font-weight: 600;
+    background-color: rgb(159, 161, 161);
+    border: 1px solid black;
+    margin: 0.5px;
+    border-radius: 3px;
+}
+
+button:hover {
+    border: 2px solid rgb(255, 255, 255);
+    background-color: rgb(211, 214, 214);
+}
+
+button:focus {
+    outline: none;
+}
+
+.display {
+    display: inline-block;
+    width: 240px;
+    height: 80px;
+    margin-left: 1px;
+    text-align: right;
+    color: white;
+    font-size: 1.8rem;
+    font-family: digital;
+}
+
+.alert {
+    position: absolute;
+    color: rgb(248, 85, 85);
+    width: 240px;
+    height: 40px;
+    text-align: right;
+    padding-top: 15px;
+}
+
+.equals {
+    background-color: deepskyblue;
+}
+
+.ac {
+    background-color: rgb(238, 94, 94);
+}
+
+.equals:hover {
+    border: 2px solid rgb(255, 255, 255);
+    background-color: rgb(122, 219, 252);
+}
+
+.ac:hover {
+    border: 2px solid rgb(255, 255, 255);
+    background-color: rgb(236, 131, 131);
 }

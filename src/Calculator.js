@@ -1,10 +1,13 @@
 import React from 'react';
 import './index.css'
 
-const Display = ({result, currentEquation, shouldEqual}) => {
+const Display = ({result, currentEquation, wasEqualPressed, alert}) => {
   return (
     <div id="display" className='display'>
-      {shouldEqual ? result : currentEquation}
+      {wasEqualPressed ? result : currentEquation}
+      <div className='alert'>
+      {alert}
+      </div>
     </div>
   )
 }
@@ -12,25 +15,19 @@ const Display = ({result, currentEquation, shouldEqual}) => {
 const Button = ({name, id, handleClick}) => {
   return (
     <button id={id} name={name} onClick={(e) => handleClick(e)}>{name}</button>
-    );
-}
-
-const ZeroBtn = ({name, id, handleClick}) => {
-  return (
-    // i tutaj dasz że jeśli count jest większy od 0 to wtedy po prostu zwrócisz null na onclick i się nie wykona nic!
-    <button id={id} name={name} onClick={(e) => handleClick(e)}>{name}</button>
+    
     );
 }
 
 const EqualsBtn = ({name, id, handleEqualsClick}) => {
   return (
-    <button id={id} name={name} onClick={() => handleEqualsClick()}>{name}</button>
+    <button id={id} className="equals" name={name} onClick={() => handleEqualsClick()}>{name}</button>
     );
 }
 
 const AC = ({name, handleClearClick}) => {
   return (
-    <button id="clear" onClick={() => handleClearClick()}>{name}</button>
+    <button id="clear" className="ac" onClick={() => handleClearClick()}>{name}</button>
   )
 }
 
@@ -38,30 +35,34 @@ const Calculator = () => {
   const [result, setResult] = React.useState(0)
   const [currentEquation, setCurrentEquation] = React.useState('')
   const [decimalCount, setDecimalCount] = React.useState(0)
-  const [shouldEqual, setShouldEqual] = React.useState(false)
+  const [wasEqualPressed, setWasEqualPressed] = React.useState(false)
+  const [alert, setAlert] = React.useState('')
  
   function handleClick(e)  {
-    setShouldEqual(false)
+    setWasEqualPressed(false)
     const input = e.target.name 
-    // console.log('curEq: ' + currentEquation, 'last: ' + currentEquation[currentEquation.length - 1])
-    return processEquation(
-      currentEquation, input, setCurrentEquation, decimalCount, setDecimalCount)
+    // Prevent too long input
+    if( currentEquation.length + input.length > 16) {
+      // Display alert only when it's an empty string
+      if(!alert) {
+        // Display message for 5 seconds
+        setAlert("DIGIT LIMIT EXCEEDED")
+        setTimeout(() => setAlert(""), 2000)
+      }
+      return
+    }
+    return processEquation(currentEquation, input, setCurrentEquation, decimalCount, setDecimalCount)
   }
 
   function handleEqualsClick() {
-    // debugger;
     let len = currentEquation.length
-    let tempEq = ''
     if(/[\/+*\-]/.test(currentEquation[len - 1])) {
-      return;
-      // tempEq = currentEquation.substr(0, len - 1)
-      // // console.log(tempEq)
-      // setResult(eval(tempEq))
-      // setCurrentEquation(eval(tempEq))
+      // prevent from equation to be accepted as result (ie. do nothing when the operator is the last char of equation)
+      return
     } else {
       setResult(eval(currentEquation))
       setCurrentEquation(eval(currentEquation))
-      setShouldEqual(true)
+      setWasEqualPressed(true)
     }
   }
 
@@ -72,26 +73,31 @@ const Calculator = () => {
   }
 
   return ( 
-  <div>
-    <Button id='one' name="1" handleClick={handleClick}/>
-    <Button id='two' name="2" handleClick={handleClick}/>
-    <Button id='three' name="3" handleClick={handleClick}/>
-    <Button id='four' name="4" handleClick={handleClick}/>
-    <Button id='five' name="5" handleClick={handleClick}/>
-    <Button id='six' name="6" handleClick={handleClick}/>
-    <Button id='seven' name="7" handleClick={handleClick}/>
-    <Button id='eight' name="8" handleClick={handleClick}/>
-    <Button id='nine' name="9" handleClick={handleClick}/>
-    <ZeroBtn id='zero' name="0" handleClick={handleClick}/>
-    <Button id='decimal' name="." handleClick={handleClick}/>
-    <Button id='add' name="+" handleClick={handleClick}/>
-    <Button id='subtract' name="-" handleClick={handleClick}/>
-    <Button id='multiply' name="*" handleClick={handleClick}/>
-    <Button id='divide' name="/" handleClick={handleClick}/>
-    <EqualsBtn id='equals' name="=" handleEqualsClick={handleEqualsClick}/>
-    <Display result={result} currentEquation={currentEquation} shouldEqual={shouldEqual}/>
-    <AC name='AC' handleClearClick={handleClearClick} id="clear"/>
-  </div>
+  <div className="container"> 
+    <div className="calculator">
+      <div style={{display: 'flex', boxSizing: "border-box"}}>
+        <AC name='AC' handleClearClick={handleClearClick} id="clear"/>
+        <Display result={result} alert={alert} currentEquation={currentEquation} wasEqualPressed={wasEqualPressed}/>
+      </div>
+      <Button id='one' name="1" handleClick={handleClick}/>
+      <Button id='two' name="2" handleClick={handleClick}/>
+      <Button id='three' name="3" handleClick={handleClick}/>
+      <Button id='divide' name="/" handleClick={handleClick}/>
+      <Button id='four' name="4" handleClick={handleClick}/>
+      <Button id='five' name="5" handleClick={handleClick}/>
+      <Button id='six' name="6" handleClick={handleClick}/>
+      <Button id='multiply' name="*" handleClick={handleClick}/>
+      <Button id='seven' name="7" handleClick={handleClick}/>
+      <Button id='eight' name="8" handleClick={handleClick}/>
+      <Button id='nine' name="9" handleClick={handleClick}/>
+      <Button id='subtract' name="-" handleClick={handleClick}/>
+      <Button id='zero' name="0" handleClick={handleClick}/>
+      <Button id='decimal' name="." handleClick={handleClick}/>
+      <EqualsBtn id='equals' name="=" handleEqualsClick={handleEqualsClick}/>
+      <Button id='add' name="+" handleClick={handleClick}/>
+    </div>
+  </div>  
+  
   );
 }
 // it also handles octal literals
@@ -114,9 +120,13 @@ function processEquation (curEq, input, setter, dcmCount, dcmSetter) {
         return curEq + input
       }
     })
-  } else if(/[\/+*\-]/.test(curEq[curEq.length - 1]) && /[\/+*]/.test(input)) {
+  } else if( curEq.length > 1 && curEq[curEq.length - 2] === '+' &&  curEq[curEq.length - 1] === '-' &&  /[\/+*]/.test(input)) {
+    return
+  }else if( curEq.length > 1 &&  !/[\/+*\-]/.test(curEq[curEq.length - 2])  && /[\/+*\-]/.test(curEq[curEq.length - 1]) && /[\/+*]/.test(input)) {
     // cut out the whole substring without the operator and replace it with the new one (ie. input) - except the minus operator
     setter(curEq.substr(0, curEq.length - 1) + input) 
+  } else if(curEq[curEq.length - 1] === '-' && input === '-') {
+    return
   } else if(/[\/+*\-]/.test(input)) {
     // reset count after each operator (so in every new number)
     dcmSetter(0)
@@ -138,17 +148,15 @@ function getLastNumber(equation) {
   return equation.split('').reduce(
     (acc, char) => /[0-9.]/.test(char) ? acc + char : '', '')
 }
-
  
 export default Calculator;
 
 // TO-DO:
-// - rozwiązać problem z testem 16 (czyli zmodyfikować / rozwinąć wpisywanie operatorów)
-// - zaimplementować Formula / Expression Logic jeśli to nie będzie mega długie do zrobienia (jeśli tak to po prostu przed składaniem CV to rozwiniesz tak samo jak Drum Machine)
+// - naprawić problem operatorów
+// - jeśli result jest dłuższy niz 17 to zaokrągl go do 15 miejsc po przecinku, żeby nigdy nie wychodził poza kalkulator
+// - zaimplementować Formula / Expression Logic jeśli to nie będzie mega długie do zrobienia (po prostu przed składaniem CV to rozwiniesz tak samo jak Drum Machine)
  
 // podczas tego przypomnij sobie działania hooków, których się już nauczyłeś
 // czytaj także równolegle dokumentacje "zaawansowane informacje"
 
 // PLAN ZAWSZE: 1. określ komponenty (każdy ma mieć swoje osobne zadanie) 2. zbuduj wersję statyczną (komponenty bez stanu) 3. zacznij od tego najwyższego 4. zaimplementuj minimalną dynamikę (pamiętaj o tym, żeby mieć tylko te części stanu, które są crucial) 5.rozwijaj po kolei różne feeature'y
-
-// PYTANIE DO KACPERRA: czy worth jest podejście, że styluje się na końcu? czy to różnie bywa
